@@ -69,6 +69,7 @@ def step_ui(node_view):
     node_view.eval_step = increment
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Eval')
 def run(nodes, increment=-1):
 
@@ -81,9 +82,6 @@ def run(nodes, increment=-1):
     visited = {}
 
     util.show('\nRunning Items ------------------------------\n')
-
-    if util.in_unreal:
-        unreal_lib.graph.set_auto_compile(False)
 
     if increment == -1:
 
@@ -151,9 +149,6 @@ def run(nodes, increment=-1):
         if util.in_unreal:
             eval_items = nodes[:(increment + 1)]
             ui_nodes.handle_unreal_evaluation(eval_items)
-
-    if util.in_unreal:
-        unreal_lib.graph.set_auto_compile(True)
 
     util.show('\nFinished Graph ------------------------------\n\n')
     watch.end()

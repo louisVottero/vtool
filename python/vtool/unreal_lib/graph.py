@@ -1,6 +1,7 @@
 # Copyright (C) 2024 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
 import re
+import uuid
 import functools
 
 from vtool import util, unreal_lib
@@ -11,9 +12,65 @@ if util.in_unreal:
     import unreal
 
 current_control_rig = None
-undo_open = False
 
 from . import lib_function
+
+
+class AutoCompileState:
+
+    def __init__(self):
+        self._state = False
+        self._id = None
+
+    @property
+    def state(self) -> bool:
+        """Returns the current auto-compile state."""
+        return self._state
+
+    def set_state(self, value: bool, track_id=None):
+        """Sets the state with unique tracking confirmation.
+        
+        Ignores incoming 'True' signals unless the provided track_id matches
+        the lock established when the state was turned off (or initialized).
+        """
+        if self._id == None:
+            self._id = track_id
+        if self._id != track_id:
+            return
+
+        self._state = value
+
+        if value:
+            self._id = None
+
+        util.show(f'Auto Compile: {value}')
+        set_auto_compile(value)
+
+
+class UndoBracket:
+
+    def __init__(self):
+        self._open = None
+
+    def open(self, title=''):
+        if self._open:
+            return
+        util.show('Open Undo: %s' % title)
+        for controller in get_controllers(include_function_library_controller=True):
+            controller.open_undo_bracket(title)  # ...
+        self._open = title
+
+    def close(self, title):
+        if not self._open or self._open != title:
+            return
+        util.show('Close Undo: %s' % title)
+        for controller in get_controllers(include_function_library_controller=True):
+            controller.close_undo_bracket()  # ...
+        self._open = None
+
+
+auto_compile = AutoCompileState()
+undo_bracket = UndoBracket()
 
 
 def decorator_undo(title=''):
@@ -23,16 +80,32 @@ def decorator_undo(title=''):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             if util.in_unreal:
-                open_undo(title)
+                undo_bracket.open(title)
             try:
                 return func(*args, **kwargs)
             finally:
                 if util.in_unreal:
-                    close_undo(title)
+                    undo_bracket.close(title)
 
         return wrapper
 
     return decorator
+
+
+def decorator_auto_compile_off(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        track_id = uuid.uuid4()
+        if util.in_unreal:
+            auto_compile.set_state(False, track_id)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if util.in_unreal:
+                auto_compile.set_state(True, track_id)
+
+    return wrapper
 
 
 def n(unreal_node):
@@ -1000,20 +1073,27 @@ def get_backward_controller(graph):
     return get_graph_model_controller(model, graph)
 
 
-def get_controllers(graph=None):
+def get_controllers(graph=None, include_function_library_controller=False):
     if not graph:
         graph = get_current_control_rig()
 
-    if graph:
-
-        construct = get_construct_controller(graph)
-        forward = get_forward_controller(graph)
-        backward = get_backward_controller(graph)
-
-        return [construct, forward, backward]
-
-    else:
+    if not graph:
         return []
+
+    construct = get_construct_controller(graph)
+    forward = get_forward_controller(graph)
+    backward = get_backward_controller(graph)
+
+    controllers = [construct, forward, backward]
+
+    if include_function_library_controller:
+        try:
+            lib_controller = graph.get_controller_by_name('RigVMFunctionLibrary')
+            controllers.append(lib_controller)
+        except Exception:
+            pass
+
+    return [c for c in controllers if c]
 
 
 def get_node(node_name, controller):
@@ -1057,68 +1137,6 @@ def get_selected_nodes(as_string=True):
             node_name_dict[graph_name] = nodes
 
     return node_name_dict
-
-
-def reset_undo():
-    global undo_open
-    undo_open = False
-
-
-def open_undo(title=''):
-    global undo_open
-    if undo_open:
-        return
-    util.show('Open Undo: %s' % title)
-    graph = get_current_control_rig()
-
-    if not graph:
-        return
-
-    controllers = get_controllers(graph)
-
-    try:
-        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
-        controllers.append(controller)
-    except:
-        pass
-
-    found_one = False
-    for controller in controllers:
-        if controller:
-            controller.open_undo_bracket(title)
-            found_one = True
-
-    if found_one:
-        undo_open = title
-
-
-def close_undo(title):
-    global undo_open
-    if not undo_open:
-        return
-
-    if undo_open != title:
-        return
-
-    util.show('Close Undo: %s' % undo_open)
-    graph = get_current_control_rig()
-
-    if not graph:
-        return
-
-    controllers = get_controllers(graph)
-    try:
-        controller = graph.get_controller_by_name('RigVMFunctionLibrary')
-        controllers.append(controller)
-    except:
-        pass
-
-    for controller in controllers:
-        if controller:
-            controller.close_undo_bracket()
-
-    if undo_open:
-        undo_open = False
 
 
 def is_node(node):
@@ -1369,6 +1387,8 @@ def build_vetala_lib():
     build_vetala_lib_class(lib_function.VetalaLib(), controller)
 
 
+@decorator_auto_compile_off
+@decorator_undo('Clear Library')
 def clear_library(control_rig=None):
 
     clean_graph(only_ramen=True)
@@ -1419,17 +1439,16 @@ def get_vetala_lib_created(class_instance=None):
     return created
 
 
+@decorator_auto_compile_off
 @decorator_undo(title='Build Vetala Lib')
 def build_vetala_lib_class(class_instance, controller):
-
-    set_auto_compile(False)
 
     current_control_rig = unreal_lib.graph.get_current_control_rig()
 
     if not current_control_rig:
         return
 
-    library = current_control_rig.get_local_function_library()  # used in eval below
+    library = current_control_rig.get_local_function_library()
 
     method_list = util.get_class_methods(class_instance.__class__)
 
@@ -1438,7 +1457,6 @@ def build_vetala_lib_class(class_instance, controller):
     function_dict = {}
 
     with unreal.ScopedSlowTask(len(method_list), "Build Vetala lib...") as slow_task:
-    # 2. Make the progress dialog visible immediately
         slow_task.make_dialog(can_cancel=True)
 
         for method in method_list:

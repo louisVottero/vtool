@@ -832,6 +832,7 @@ class NodeView(object):
 
         return True
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Delete Selected Nodes')
     def delete(self, items):
 
@@ -905,6 +906,7 @@ class NodeView(object):
 
         return found
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Open Graph')
     def open(self):
 
@@ -963,11 +965,11 @@ class NodeView(object):
 
             self.items.append(item_inst)
 
+    @util_ramen.decorator_auto_compile_off
+    @util_ramen.decorator_undo('Open Graph')
     def add_rig_item(self, node_type, position=None):
         item_inst = None
 
-        if in_unreal:
-            unreal_lib.graph.set_auto_compile(False)
         if not position:
             position = qt.QtCore.QPointF()
 
@@ -4234,6 +4236,7 @@ class NodeItem(object):
 
         return attribute_item
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Delete Node')
     def delete(self):
 
@@ -5062,7 +5065,6 @@ class BundleItem(NodeItem):
                 self.bundle_platform_nodes.append(node)
 
         for node in self.bundle_platform_nodes:
-            print('node', node)
             graph = node.get_contained_graph()
 
             controller = control_rig.get_or_create_controller(graph)
@@ -5095,6 +5097,7 @@ class BundleItem(NodeItem):
     def _implement_run(self, socket=None):
         pass
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Delete Node')
     def delete(self):
 
@@ -5942,6 +5945,7 @@ class RigItem(NodeItem):
         # this is used when a rig doesn't have a rig_util. Meaning it doesn't require a custom node/set in the DCC package
         return
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Node Run')
     def _implement_run(self, socket=None):
 
@@ -6027,8 +6031,13 @@ class RigItem(NodeItem):
             apex_edit = houdini_lib.graph.current_apex_node
 
             source_port = apex.getPort(rig.sub_apex_node, name)
-            target_port = apex.getPort(in_rig.sub_apex_node, in_name)
-            apex.addWire(source_port, target_port)
+
+            print('here!')
+            print('in rig', in_rig)
+            print(in_rig.sub_apex_node, in_name)
+            if in_rig.sub_apex_node:
+                target_port = apex.getPort(in_rig.sub_apex_node, in_name)
+                apex.addWire(source_port, target_port)
 
             houdini_lib.graph.update_apex_graph(apex_edit, apex)
 
@@ -6071,6 +6080,7 @@ class RigItem(NodeItem):
         self.load_rig()
         super(RigItem, self).run_inputs()
 
+    @util_ramen.decorator_auto_compile_off
     @util_ramen.decorator_undo('Delete Rig Node')
     def delete(self):
         super(RigItem, self).delete()
@@ -6467,6 +6477,7 @@ def get_all_nodes(node):
     return view.items
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Update Socket')
 def update_socket_value(socket, update_rig=False, eval_targets=False):
 
@@ -6502,6 +6513,7 @@ def update_socket_value(socket, update_rig=False, eval_targets=False):
             target_node.set_socket(output.name, value, run=False)
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Connect Socket')
 def connect_socket(source_socket, target_socket, run_target=True):
     source_node = source_socket.get_parent()
@@ -6515,8 +6527,6 @@ def connect_socket(source_socket, target_socket, run_target=True):
         widget.set_title_only(True)
 
     if in_unreal:
-
-        unreal_lib.graph.set_auto_compile(False)
 
         if is_rig(source_node):
             run_target = False
@@ -6577,14 +6587,10 @@ def connect_socket(source_socket, target_socket, run_target=True):
 
     target_node.set_socket(target_socket.name, value, run=run_target)
 
-    if in_unreal:
-        unreal_lib.graph.set_auto_compile(True)
 
-
+@util_ramen.decorator_auto_compile_off
+@util_ramen.decorator_undo('Connect Socket')
 def disconnect_socket(source_socket, target_socket, run_target=True):
-
-    if in_unreal:
-        unreal_lib.graph.set_auto_compile(False)
 
     if not auto_update:
         return
@@ -6685,9 +6691,6 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
                 run_target = True
 
     node.set_socket(target_socket.name, None, run=run_target)
-
-    if in_unreal:
-        unreal_lib.graph.set_auto_compile(True)
 
 
 def test_pass_connection(line, source_socket, target_socket):
@@ -7068,6 +7071,7 @@ def get_nodes_at_depth(nodes, depth_dict=None):
     return sorted_keys_by_value
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Handle Eval')
 def handle_unreal_evaluation(nodes):
     if not unreal_lib.graph.get_current_control_rig():
@@ -7076,6 +7080,7 @@ def handle_unreal_evaluation(nodes):
     add_unreal_evaluation(nodes)
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Handle Bundle')
 def handle_unreal_bundles(nodes):
     with unreal.ScopedSlowTask(len(nodes), "Build Ramen connections...") as slow_task:
@@ -7345,6 +7350,7 @@ def update_node_positions(nodes):
         node.update_position()
 
 
+@util_ramen.decorator_auto_compile_off
 @util_ramen.decorator_undo('Transfer Values')
 def transfer_values(source_item, target_item):
 
