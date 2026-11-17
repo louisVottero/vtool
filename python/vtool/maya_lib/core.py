@@ -2464,15 +2464,7 @@ def get_empty_reference_nodes():
 
 def get_non_unique_names():
     dag_nodes = cmds.ls(type='dagNode')
-
-    found = []
-
-    for dag_node in dag_nodes:
-
-        if dag_node.find('|') > -1:
-            found.append(dag_node)
-
-    return found
+    return [node for node in dag_nodes if '|' in node]
 
 
 def is_hidden(transform, skip_connected=True, shape=True):
