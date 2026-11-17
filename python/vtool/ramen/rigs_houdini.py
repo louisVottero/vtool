@@ -91,38 +91,43 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
             self._init_sub_apex_parent_and_controls()
 
+            self._sub_apex_node = self._get_sub_apex(uuid)
+
     def _init_sub_apex_parent_and_controls(self):
-            parent_value_node = self._attribute_node['parent']
-            position = self.sub_apex.nodePosition(parent_value_node)
-            position[0] += 2
-            # position[1] += 2
+        if not 'parent' in self._attribute_node:
+            return
 
-            parent_default_matrix = hou.Matrix4()
-            parent_default_matrix.setToIdentity()
+        parent_value_node = self._attribute_node['parent']
+        position = self.sub_apex.nodePosition(parent_value_node)
+        position[0] += 2
+        # position[1] += 2
 
-            get_parent = self.sub_apex.addNode('get_parent', 'array::Get<Matrix4>')
-            self.sub_apex.setNodePosition(get_parent, position)
+        parent_default_matrix = hou.Matrix4()
+        parent_default_matrix.setToIdentity()
 
-            parms = self.sub_apex.getNodeParms(get_parent)
-            parms['index'] = -1
-            parms['default'] = parent_default_matrix
-            self.sub_apex.setNodeParms(get_parent, parms)
+        get_parent = self.sub_apex.addNode('get_parent', 'array::Get<Matrix4>')
+        self.sub_apex.setNodePosition(get_parent, position)
 
-            get_parent_in = self.sub_apex.getPort(get_parent, 'array')
+        parms = self.sub_apex.getNodeParms(get_parent)
+        parms['index'] = -1
+        parms['default'] = parent_default_matrix
+        self.sub_apex.setNodeParms(get_parent, parms)
 
-            parent_value = self.sub_apex.getPort(parent_value_node, 'value')
-            self.sub_apex.addWire(parent_value, get_parent_in)
+        get_parent_in = self.sub_apex.getPort(get_parent, 'array')
 
-            control_value_node = self._attribute_node['controls']
-            position = self.sub_apex.nodePosition(control_value_node)
-            position[0] -= 2
-            control_parm = self.sub_apex.getPort(control_value_node, 'parm')
+        parent_value = self.sub_apex.getPort(parent_value_node, 'value')
+        self.sub_apex.addWire(parent_value, get_parent_in)
 
-            build_controls = self.sub_apex.addNode('array_build_controls', 'array::Build<Matrix4>')
-            self.sub_apex.setNodePosition(build_controls, position)
-            build_controls_result = self.sub_apex.getPort(build_controls, 'result')
+        control_value_node = self._attribute_node['controls']
+        position = self.sub_apex.nodePosition(control_value_node)
+        position[0] -= 2
+        control_parm = self.sub_apex.getPort(control_value_node, 'parm')
 
-            self.sub_apex.addWire(build_controls_result, control_parm)
+        build_controls = self.sub_apex.addNode('array_build_controls', 'array::Build<Matrix4>')
+        self.sub_apex.setNodePosition(build_controls, position)
+        build_controls_result = self.sub_apex.getPort(build_controls, 'result')
+
+        self.sub_apex.addWire(build_controls_result, control_parm)
 
     def _initialize_node_attribute(self, attribute_name):
 
@@ -218,17 +223,21 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self._attribute_out_offset += -1.5
 
     def _get_sub_apex(self, uuid):
-
         if not self.edit_graph_instance:
             return
 
-        node_count = houdini_lib.graph.get_apex_node_count(self.edit_graph_instance)
+        if hasattr(self.apex, 'allNodes'):
+            node_count = len(self.apex.allNodes())
+        else:
+            node_count = houdini_lib.graph.get_apex_node_count(self.edit_graph_instance)
+
+        print('node count!!!', node_count, self.apex.allNodes())
 
         for node in range(node_count):
             node_parms = self.apex.getNodeParms(node)
 
-            # _apex.Dict hs no function get...
             node_uuid = node_parms.getValue('uuid')
+
             if node_uuid == uuid:
                 return node
 
