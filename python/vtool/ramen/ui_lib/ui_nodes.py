@@ -5224,7 +5224,9 @@ class BundleItem(NodeItem):
             self.rig.load()
 
         if not self.rig.is_valid():
-            return
+            # TODO: need to add rig.is_valid for houdini
+            if not in_houdini:
+                return
 
         if self.graphic:
             position = [self.graphic.pos().x(), self.graphic.pos().y()]
@@ -6027,14 +6029,11 @@ class RigItem(NodeItem):
                                               rig_solve['controller'])
 
         if in_houdini:
-            apex = houdini_lib.graph.current_apex
-            apex_edit = houdini_lib.graph.current_apex_node
+            apex = houdini_lib.graph.current.apex
+            apex_edit = houdini_lib.graph.current.apex_node
 
             source_port = apex.getPort(rig.sub_apex_node, name)
 
-            print('here!')
-            print('in rig', in_rig)
-            print(in_rig.sub_apex_node, in_name)
             if in_rig.sub_apex_node:
                 target_port = apex.getPort(in_rig.sub_apex_node, in_name)
                 apex.addWire(source_port, target_port)
@@ -6564,8 +6563,8 @@ def connect_socket(source_socket, target_socket, run_target=True):
             run_target = False
 
             if auto_update:
-                apex = houdini_lib.graph.current_apex
-                apex_edit = houdini_lib.graph.current_apex_node
+                apex = houdini_lib.graph.current.apex
+                apex_edit = houdini_lib.graph.current.apex_node
 
                 source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
                 target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)
@@ -6674,8 +6673,8 @@ def disconnect_socket(source_socket, target_socket, run_target=True):
 
             run_target = False
 
-            apex = houdini_lib.graph.current_apex
-            apex_edit = houdini_lib.graph.current_apex_node
+            apex = houdini_lib.graph.current.apex
+            apex_edit = houdini_lib.graph.current.apex_node
 
             source_port = apex.getPort(source_node.rig.rig_util.sub_apex_node, source_socket.name)
             target_port = apex.getPort(target_node.rig.rig_util.sub_apex_node, target_socket.name)

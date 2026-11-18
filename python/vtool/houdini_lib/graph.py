@@ -2,37 +2,72 @@
 
 from vtool import util
 
-character_import = None
-current_network = None
-current_apex_node = None
-current_apex = None
+
+class Current(object):
+
+    def __init__(self):
+        self.reset()
+
+    def __setattr__(self, name, value):
+        old_value = self.__dict__.get(name, object())
+
+        if old_value is not object() and old_value == value:
+            return
+
+        super(Current, self).__setattr__(name, value)
+
+        clean_name = name.lstrip("_")
+        if value:
+            print(f"{clean_name} -> {value}")
+
+    @property
+    def network(self):
+        return self._current_network
+
+    @property
+    def apex(self):
+        return self._current_apex
+
+    @property
+    def apex_node(self):
+        return self._current_apex_node
+
+    @property
+    def character_import(self):
+        return self._current_character_import
+
+    @network.setter
+    def network(self, network_obj):
+        self._current_network = network_obj
+
+    @apex.setter
+    def apex(self, apex_obj):
+        self._current_apex = apex_obj
+
+    @apex_node.setter
+    def apex_node(self, apex_node_obj):
+        self._current_apex_node = apex_node_obj
+
+    @character_import.setter
+    def character_import(self, houdini_node_obj):
+        self._current_character_import = houdini_node_obj
+
+    def reset(self):
+        self._current_network = None
+        self._current_apex = None
+        self._current_apex_node = None
+        self._current_character_import = None
+
+
+current = Current()
 
 if util.in_houdini:
     import hou
     import apex
 
 
-def set_current_character_import(node):
-
-    global character_import
-
-    character_import = node.path()
-
-    util.show('Set current character to %s' % character_import)
-
-
-def set_current_network(network):
-    global current_network
-    current_network = network
-
-
-def set_current_apex_node(edit_graph):
-    global current_apex_node
-    current_apex_node = edit_graph
-
-
 def reset_current_character_import(name=''):
-    character_node = hou.node(character_import)
+    character_node = hou.node(current.character_import)
 
     if not character_node:
 
@@ -61,11 +96,11 @@ def initialize_input_output(apex_graph):
 
 def add_bone_deform(apex_graph):
 
-    base_shp = apex_graph.addGraphInput(0, 'Base.shp')
-    base_skel = apex_graph.addGraphInput(0, 'Base.skel')
+    base_shp = apex_graph.addGraphInput(1, 'Base.shp')
+    base_skel = apex_graph.addGraphInput(1, 'Base.skel')
 
-    out_base_shp = apex_graph.addGraphOutput(1, 'Base.shp')
-    out_base_skel = apex_graph.addGraphOutput(1, 'Base.skel')
+    out_base_shp = apex_graph.addGraphOutput(2, 'Base.shp')
+    out_base_skel = apex_graph.addGraphOutput(2, 'Base.skel')
 
     point_transform = apex_graph.addNode('point_transform', 'skel::SetPointTransforms')
     apex_graph.setNodePosition(point_transform, hou.Vector3(16, -2, 0))
@@ -99,7 +134,8 @@ def add_bone_deform(apex_graph):
 
 def get_apex_graph(edit_graph_instance, parm='stash'):
 
-    global current_apex
+    current_apex = current.apex
+    current_apex_node = current.apex_node
 
     if current_apex:
         if current_apex_node:
@@ -112,8 +148,7 @@ def get_apex_graph(edit_graph_instance, parm='stash'):
         geo = hou.Geometry()
 
     graph = apex.Graph(geo)
-
-    current_apex = graph
+    current.apex = graph
     return graph
 
 
@@ -130,9 +165,9 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
         name = 'setup_apex'
 
     if character_node:
-        character_node = hou.node(character_node)
+        character_node = character_node
     else:
-        character_node = hou.node(character_import)
+        character_node = current.character_import
 
     if not character_node:
         return None, None
@@ -153,8 +188,8 @@ def build_character_sub_graph_for_apex(character_node=None, name=None, refresh=F
             sub_graph = None
 
     if sub_graph:
-        if current_apex_node:
-            edit_graph = current_apex_node
+        if current.apex_node:
+            edit_graph = current.apex_node
         else:
             edit_graph = sub_graph.node('editgraph1')
     else:
@@ -200,10 +235,10 @@ def get_apex_node_count(apex_sop_node):
 
 def get_apex_controls():
 
-    if not current_apex:
+    if not current.apex:
         return
 
-    geometry = current_apex_node.geometry(1)
+    geometry = current.apex_node.geometry(1)
     portname = geometry.findVertexAttrib('portname')
     portnames = list(portname.strings())
 
@@ -218,10 +253,10 @@ def get_apex_controls():
 
 def get_joints(filter_list):
 
-    if not character_import:
+    if not current.character_import:
         return []
 
-    character_inst = hou.node(character_import)
+    character_inst = current.character_import
 
     geometry = character_inst.geometry(1)
     name = geometry.findPointAttrib('name')
@@ -240,10 +275,10 @@ def get_joints(filter_list):
 
 def get_joint_matrix(joint_name):
 
-    if not character_import:
+    if not current.character_import:
         return
 
-    character_inst = hou.node(character_import)
+    character_inst = current.character_import
 
     geometry = character_inst.geometry(1)
     name = geometry.findPointAttrib('name')
