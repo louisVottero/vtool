@@ -284,6 +284,9 @@ class GetSubControls(rigs.RigUtil):
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetSubControls()
 
+    def _houdini_rig(self):
+        return rigs_houdini.HoudiniGetSubControls()
+
 
 class Parent(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL

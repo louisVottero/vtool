@@ -18,7 +18,7 @@ class Current(object):
 
         clean_name = name.lstrip("_")
         if value:
-            print(f"{clean_name} -> {value}")
+            util.show(f"{clean_name} -> {value}")
 
     @property
     def network(self):
@@ -304,4 +304,30 @@ def get_joint_matrix(joint_name):
             break
 
     return matrix
+
+
+def get_in_port(node_id: int, name:str, apex_graph_obj):
+    """
+    graph.getPort... doesn't always return the port id for some reason.
+    """
+
+    for port_id in apex_graph_obj.getInputPorts(node_id):
+        if apex_graph_obj.portName(port_id) == name:
+            return port_id
+
+
+def get_out_port(node_id: int, name:str, apex_graph_obj):
+    """
+    graph.getPort... doesn't always return the port id for some reason.
+    """
+    for port_id in apex_graph_obj.getOutputPorts(node_id):
+        if apex_graph_obj.portName(port_id) == name:
+            return port_id
+
+
+def wire(node_out_id: int, out_name: str, node_in_id: int, in_name: str, apex_graph_obj) -> None:
+
+    port_out = get_out_port(node_out_id, out_name, apex_graph_obj)
+    port_in = get_in_port(node_in_id, in_name, apex_graph_obj)
+    apex_graph_obj.addWire(port_out, port_in)
 

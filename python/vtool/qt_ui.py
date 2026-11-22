@@ -4469,8 +4469,10 @@ class CodeTextEdit(qt.QPlainTextEdit):
         return True
 
     def mousePressEvent(self, event):
-
         self.mouse_pressed.emit(event)
+
+        if util.in_houdini:
+            self.setFocus(qt.QtCore.Qt.MouseFocusReason)
 
         return super(CodeTextEdit, self).mousePressEvent(event)
 

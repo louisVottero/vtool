@@ -1,17 +1,54 @@
 # Copyright (C) 2025 Louis Vottero louis.vot@gmail.com    All rights reserved.
 
+from collections.abc import Collection
+from dataclasses import dataclass, field
+
 from . import rigs
 from . import util as ramen_util
 
 from .. import houdini_lib
 
 from vtool import util
+from vtool import util_math
 
 in_houdini = util.in_houdini
 
 if in_houdini:
     import hou
     import apex
+
+
+@dataclass
+class ControlData:
+    node_id: int
+    network_id: int
+    xform: hou.Matrix4 = field(default_factory=hou.Matrix4)
+    rest_xform: hou.Matrix4 = field(default_factory=hou.Matrix4)
+
+
+class ControlTracker:
+
+    def __init__(self):
+        self._controls: dict[str, ControlData] = {}
+
+    def track(self,
+              name: str,
+              node_id: int,
+              parent_id: int,
+              xform: hou.Matrix4,
+              rest_xform: hou.Matrix4) -> ControlData:
+
+        data = ControlData(node_id, parent_id, xform, rest_xform)
+
+        self._controls[name] = data
+
+        return data
+
+    def get(self, name: str) -> ControlData | None:
+        return self._controls.get(name)
+
+
+control_tracker = ControlTracker()
 
 
 class HoudiniUtilRig(rigs.PlatformUtilRig):
@@ -32,12 +69,11 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         self.apex_point_transform = None
         self.control_names = []
         self._parm_values = {}
-        self._pass_attributes = ['parent', 'controls']
         self._attribute_offset = 0
         self._attribute_out_offset = 0
+        self._y_offset = 30
+        self._spacing = 3
         self._attribute_node = {}
-
-        self._pass_attributes
 
     def _get_sub_apex_name(self):
         rig_name = 'vetala_%s_1' % self.__class__.__name__
@@ -133,9 +169,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
     def _initialize_node_attribute(self, attribute_name):
 
-        if not attribute_name in self._pass_attributes:
-            return
-
         value, attr_type = super(HoudiniUtilRig, self)._initialize_node_attribute(attribute_name)
 
         if attr_type == rigs.AttrType.STRING:
@@ -145,9 +178,6 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
     def _initialize_input(self, attribute_name):
 
-        if not attribute_name in self._pass_attributes:
-            return
-
         value, attr_type = super(HoudiniUtilRig, self)._initialize_input(attribute_name)
 
         if attr_type == rigs.AttrType.TRANSFORM:
@@ -156,73 +186,98 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
         if attr_type == rigs.AttrType.BOOL:
             self._add_in_bool(attribute_name, value)
 
-    def _initialize_output(self, attribute_name):
+        if attr_type == rigs.AttrType.VECTOR:
+            self._add_in_vector(attribute_name, value)
 
-        if not attribute_name in self._pass_attributes:
-            return
+        if attr_type == rigs.AttrType.COLOR:
+            self._add_in_vector(attribute_name, value)
+
+    def _initialize_output(self, attribute_name):
 
         value, attr_type = super(HoudiniUtilRig, self)._initialize_output(attribute_name)
 
         if attr_type == rigs.AttrType.TRANSFORM:
             self._add_out_transform(attribute_name, value)
 
+    def _place_in_node(self, node_index: int) -> None:
+        self.sub_apex.setNodePosition(node_index, hou.Vector3(self._spacing, self._y_offset + self._attribute_offset, 0))
+
+    def _place_out_node(self, node_index: int) -> None:
+        out_position = self.sub_apex.nodePosition(self.sub_output)
+        out_position[0] = out_position.x() - self._spacing
+        out_position[1] = out_position.y() + self._y_offset + self._attribute_out_offset
+
+        self.sub_apex.setNodePosition(node_index, out_position)
+
+    def _wire_in_value(self, node_index: int, name: str) -> None:
+        value_port = self.sub_apex.getPort(node_index, 'parm')
+        port_in = self.sub_apex.addGraphInput(self.sub_input, name)
+        self.sub_apex.addWire(port_in, value_port)
+
+    def _wire_out_value(self, node_index: int, name: str) -> None:
+        value_port = self.sub_apex.getPort(node_index, 'value')
+        port_out = self.sub_apex.addGraphOutput(self.sub_output, name)
+        self.sub_apex.addWire(value_port, port_out)
+
     def _add_in_string(self, attribute_name, value):
 
         value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<String>')
-        self.sub_apex.setNodePosition(value_node, hou.Vector3(2, 2 + self._attribute_offset, 0))
+        self._place_in_node(value_node)
+        self._wire_in_value(value_node, attribute_name)
 
-        value_port = self.sub_apex.getPort(value_node, 'parm')
-        port_in = self.sub_apex.addGraphInput(self.sub_input, attribute_name)
-
-        self.sub_apex.addWire(port_in, value_port)
         self._parm_values[attribute_name] = value
         self._attribute_node[attribute_name] = value_node
-
         self._attribute_offset += 1.5
 
-    def _add_in_bool(self, attribute_name, value):
+    def _add_in_bool(self, attribute_name: str, value):
 
         value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Bool>')
-        self.sub_apex.setNodePosition(value_node, hou.Vector3(2, 2 + self._attribute_offset, 0))
+        self._place_in_node(value_node)
+        self._wire_in_value(value_node, attribute_name)
 
-        value_port = self.sub_apex.getPort(value_node, 'parm')
-        port_in = self.sub_apex.addGraphInput(self.sub_input, attribute_name)
-
-        self.sub_apex.addWire(port_in, value_port)
         self._parm_values[attribute_name] = value
         self._attribute_node[attribute_name] = value_node
-
         self._attribute_offset += 1.5
 
-    def _add_in_transform(self, attribute_name, value):
+    def _add_in_vector(self, attribute_name: str, value):
+        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Vector3>')
+        self._place_in_node(value_node)
+        self._wire_in_value(value_node, attribute_name)
 
-        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Matrix4Array>')
-        self.sub_apex.setNodePosition(value_node, hou.Vector3(2, 2 + self._attribute_offset, 0))
+        if value:
+            value = value[0]
+            if len(value) == 4:
+                value = value[:-1]
+            out_value = hou.Vector3(*value)
+        else:
+            out_value = hou.Vector3()
 
-        value_port = self.sub_apex.getPort(value_node, 'parm')
-        port_in = self.sub_apex.addGraphInput(self.sub_input, attribute_name)
+        # if attribute_name == 'shape_scale':
+        #    out_value *= 100
 
-        self.sub_apex.addWire(port_in, value_port)
+        self._parm_values[attribute_name] = out_value
         self._attribute_node[attribute_name] = value_node
-
         self._attribute_offset += 1.5
 
-    def _add_out_transform(self, attribute_name, value):
+    def _add_in_transform(self, attribute_name: str, value):
 
         value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Matrix4Array>')
+        self._place_in_node(value_node)
+        self._wire_in_value(value_node, attribute_name)
 
-        out_position = self.sub_apex.nodePosition(1)
-        out_position[0] = out_position.x() - 2
-        out_position[1] = out_position.y() + 2 + self._attribute_out_offset
-
-        self.sub_apex.setNodePosition(value_node, out_position)
-
-        value_port = self.sub_apex.getPort(value_node, 'value')
-        port_out = self.sub_apex.addGraphOutput(self.sub_output, attribute_name)
-        self.sub_apex.addWire(value_port, port_out)
+        # self._parm_values[attribute_name] = value
         self._attribute_node[attribute_name] = value_node
+        self._attribute_offset += 1.5
 
-        self._attribute_out_offset += -1.5
+    def _add_out_transform(self, attribute_name: str, value):
+
+        value_node = self.sub_apex.addNode('%s_value' % attribute_name, 'Value<Matrix4Array>')
+        self._place_out_node(value_node)
+        self._wire_out_value(value_node, attribute_name)
+
+        # self._parm_values[attribute_name] = value
+        self._attribute_node[attribute_name] = value_node
+        self._attribute_offset += 1.5
 
     def _get_sub_apex(self, uuid):
         if not self.edit_graph_instance:
@@ -280,13 +335,26 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
             output_port_name = self.apex.portName(output_port)
 
-            if output_port_name == 'next' or output_port_name == 'controls':
+            if output_port_name in {'next', 'controls', 'sub_controls'}:
                 continue
 
             point_transform_in = self.apex.getPort(self.apex_point_transform, 'transforms')
 
             sub_port = self.apex.addSubPort(point_transform_in, output_port_name)
             self.apex.addWire(output_port, sub_port)
+
+    def _set_parm_values(self):
+        parm_dict = self.sub_apex.getParmDict()
+
+        for parm_key in self._parm_values:
+            parm_value = self._parm_values[parm_key]
+
+            if parm_value is None:
+                continue
+
+            parm_dict[parm_key] = parm_value
+
+        self.apex.setNodeParms(self.sub_apex_node, parm_dict)
 
     def is_valid(self):
         if self.rig.state == rigs.RigState.CREATED:
@@ -326,17 +394,11 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
         self._build_graph()
 
-        parm_dict = self.sub_apex.getParmDict()
-
-        for parm_key in self._parm_values:
-            parm_value = self._parm_values[parm_key]
-
-            parm_dict[parm_key] = parm_value
-
         sub_apex_name = self._get_sub_apex_name()
         self.sub_apex_node = self.apex.addSubnet(sub_apex_name, self.sub_apex)
 
-        self.apex.setNodeParms(self.sub_apex_node, parm_dict)
+        self._set_parm_values()
+
         self.apex.setNodePosition(self.sub_apex_node, hou.Vector3(5, 0, 0))
 
         self._post_build_graph()
@@ -416,18 +478,128 @@ class HoudiniUtilRig(rigs.PlatformUtilRig):
 
 class HoudiniFkRig(HoudiniUtilRig):
 
+    def _get_control_name(self, joint, sub=False):
+
+        use_joint_name = self.rig.attr.get('use_joint_name')
+        joint_description = None
+
+        if use_joint_name:
+            joint_description = self.get_joint_description(joint)
+
+        control_name = self.get_control_name(joint_description, sub)
+        control_name = self._inc_control_name(control_name, not sub)
+
+        return control_name
+
+    def _build_control(self, control_name, matrix, offset):
+
+        transform = self.sub_apex.addNode(control_name, 'TransformObject')
+        self.sub_apex.setNodePosition(transform, hou.Vector3(4 + offset, -2 - offset, 0))
+
+        parms = self.sub_apex.getNodeParms(transform)
+        parms['restlocal'] = matrix
+        self.sub_apex.setNodeParms(transform, parms)
+
+        transform_t_in = self.sub_apex.getPort(transform, 't[in]')
+        transform_r_in = self.sub_apex.getPort(transform, 'r[in]')
+        transform_s_in = self.sub_apex.getPort(transform, 's[in]')
+
+        sub_input_t = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_t' % control_name)
+        sub_input_r = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_r' % control_name)
+        sub_input_s = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_s' % control_name)
+
+        self.sub_apex.addWire(sub_input_t, transform_t_in)
+        self.sub_apex.addWire(sub_input_r, transform_r_in)
+        self.sub_apex.addWire(sub_input_s, transform_s_in)
+
+        return transform
+
+    def _build_control_shape(self, control_name, transform, offset, scale_offset=1, sub=False):
+
+        shape = self.sub_apex.addNode(f'shape_{control_name}', 'rig::ControlShape')
+        self.sub_apex.setNodePosition(shape, hou.Vector3(4 + offset, -5 - offset, 0))
+
+        shape_name = self.rig.attr.get('shape')
+        shape_name = 'circle_wires'
+
+        transform_xform = self.sub_apex.getPort(transform, 'xform[out]')
+        control_shape_port = self.sub_apex.getPort(shape, 'control')
+        self.sub_apex.addWire(transform_xform, control_shape_port)
+        self.sub_apex.setNodeParm(shape, 'shapetype', shape_name)
+
+        build_transform = self.sub_apex.addNode(f'shape_read_{control_name}', 'transform::Build')
+        self.sub_apex.setNodePosition(build_transform, hou.Vector3(2 + offset, -6 - offset, 0))
+
+        houdini_lib.graph.wire(self._attribute_node['shape_translate'], 'value', build_transform, 't', self.sub_apex)
+        houdini_lib.graph.wire(self._attribute_node['shape_rotate'], 'value', build_transform, 'r', self.sub_apex)
+        houdini_lib.graph.wire(self._attribute_node['shape_scale'], 'value', build_transform, 's', self.sub_apex)
+        if sub:
+            houdini_lib.graph.wire(self._attribute_node['sub_color'], 'value', shape, 'color', self.sub_apex)
+        else:
+            houdini_lib.graph.wire(self._attribute_node['color'], 'value', shape, 'color', self.sub_apex)
+
+        build_transform_offset = self.sub_apex.addNode(f'shape_offset_{control_name}', 'transform::Build')
+        self.sub_apex.setNodePosition(build_transform_offset, hou.Vector3(2 + offset, -8 - offset, 0))
+
+        mult = self.sub_apex.addNode(f'shape_mult_{control_name}', 'Multiply<Matrix4>')
+        self.sub_apex.setNodePosition(mult, hou.Vector3(4 + offset, -8 - offset, 0))
+
+        houdini_lib.graph.wire(build_transform_offset, 'm', mult, 'a', self.sub_apex)
+        houdini_lib.graph.wire(build_transform, 'm', mult, 'b', self.sub_apex)
+
+        parms = self.sub_apex.getNodeParms(build_transform_offset)
+        parms['r'] = hou.Vector3(90, 0, 0)
+        parms['s'] = hou.Vector3(100 * scale_offset, 100 * scale_offset, 100 * scale_offset)
+
+        self.sub_apex.setNodeParms(build_transform_offset, parms)
+
+        houdini_lib.graph.wire(mult, 'result', shape, 'shapeoffset', self.sub_apex)
+
+    def _build_sub_controls(self, joint, transform, matrix, sub_control_count, offset):
+
+        sub_control_names = []
+        sub_transform = None
+
+        if sub_control_count > 0:
+
+            for inc in range(0, sub_control_count):
+                control_name = self._get_control_name(joint, sub=True)
+                self.control_names.append(control_name)
+                sub_control_names.append(control_name)
+
+                weight = float(inc + 1) / sub_control_count
+                scale = util_math.lerp(1.0, 0.75, weight)
+                offset += 2
+
+                sub_transform = self._build_control(control_name, matrix, offset)
+                self._build_control_shape(control_name, sub_transform, offset, scale, sub=True)
+
+                sub_parent_xform_in = self.sub_apex.getPort(sub_transform, 'parent[in]')
+                sub_parent_localxform_in = self.sub_apex.getPort(sub_transform, 'parentlocal[in]')
+
+                xform_out = self.sub_apex.getPort(transform, 'xform[out]')
+                localxform_out = self.sub_apex.getPort(transform, 'localxform[out]')
+
+                self.sub_apex.addWire(xform_out, sub_parent_xform_in)
+                self.sub_apex.addWire(localxform_out, sub_parent_localxform_in)
+
+                control_tracker.track(control_name, sub_transform, -1, matrix, hou.Matrix4(1))
+
+        return sub_transform, sub_control_names, offset
+
     def _build_graph(self):
 
         joints = self.rig.attr.get('joints')
 
         if not joints:
             return
-        use_joint_name = self.rig.attr.get('use_joint_name')
+
         hierarchy = self.rig.attr.get('hierarchy')
+        rig_parent = self.rig.attr.get('parent')
+        sub_control_count = self.rig.attr.get('sub_count')[0]
 
         get_parent = self.sub_apex.matchNodes('get_parent')[0]
         get_parent_value = self.sub_apex.getPort(get_parent, 'value')
-        parent_matrix = self.sub_apex.getPortData(get_parent_value, False)
 
         array_build_controls = self.sub_apex.matchNodes('array_build_controls')[0]
         build_controls_in = self.sub_apex.getPort(array_build_controls, 'values')
@@ -437,55 +609,46 @@ class HoudiniFkRig(HoudiniUtilRig):
         sub = False
         last_transform = None
 
+        controls = []
+        parent_matrix = None
+
         for joint in joints:
 
-            matrix = houdini_lib.graph.get_joint_matrix(joint)
+            joint_matrix = houdini_lib.graph.get_joint_matrix(joint)
+            matrix = joint_matrix
 
-            joint_description = None
-
-            if use_joint_name:
-                joint_description = self.get_joint_description(joint)
-
-            control_name = self.get_control_name(joint_description, sub=False)
-
-            control_name = self._inc_control_name(control_name, not sub)
+            control_name = self._get_control_name(joint)
 
             self.control_names.append(control_name)
+            controls.append(control_name)
 
-            transform = self.sub_apex.addNode(control_name, 'TransformObject')
-            self.sub_apex.setNodePosition(transform, hou.Vector3(4 + offset, -2 - offset, 0))
+            if rig_parent and not parent_matrix:
+                rig_parent = rig_parent[-1]
+                parent_data = control_tracker.get(rig_parent)
+                if parent_data:
+                    parent_matrix = parent_data.xform
 
-            matrix = parent_matrix.inverted() * matrix
+            if parent_matrix:
+                matrix = matrix * parent_matrix.inverted()
 
-            parms = self.sub_apex.getNodeParms(transform)
-            parms['restlocal'] = matrix
-            self.sub_apex.setNodeParms(transform, parms)
+            transform = self._build_control(control_name, matrix, offset)
+            self._build_control_shape(control_name, transform, offset)
 
-            transform_t_in = self.sub_apex.getPort(transform, 't[in]')
-            transform_r_in = self.sub_apex.getPort(transform, 'r[in]')
-            transform_s_in = self.sub_apex.getPort(transform, 's[in]')
-
-            transform_xform = self.sub_apex.getPort(transform, 'xform[out]')
             parent_xform_in = self.sub_apex.getPort(transform, 'parent[in]')
             parent_localxform_in = self.sub_apex.getPort(transform, 'parentlocal[in]')
-
-            sub_input_t = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_t' % control_name)
-            sub_input_r = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_r' % control_name)
-            sub_input_s = self.sub_apex.addGraphInput(self.sub_input, 'control_%s_s' % control_name)
-
-            self.sub_apex.addWire(sub_input_t, transform_t_in)
-            self.sub_apex.addWire(sub_input_r, transform_r_in)
-            self.sub_apex.addWire(sub_input_s, transform_s_in)
-
-            joint_out = self.sub_apex.addGraphOutput(self.sub_output, joint)
-
-            self.sub_apex.addWire(transform_xform, joint_out)
-
             self.sub_apex.addWire(get_parent_value, parent_xform_in)
 
-            sub_build_controls_in = self.sub_apex.addSubPort(build_controls_in, control_name)
+            sub_transform, sub_control_names, sub_offset = self._build_sub_controls(joint,
+                                                                                    transform,
+                                                                                    hou.Matrix4(1),
+                                                                                    sub_control_count,
+                                                                                    offset)
 
-            self.sub_apex.addWire(transform_xform, sub_build_controls_in)
+            offset += sub_offset
+
+            out_transform = transform
+            if sub_transform:
+                out_transform = sub_transform
 
             if hierarchy:
 
@@ -496,33 +659,37 @@ class HoudiniFkRig(HoudiniUtilRig):
                     self.sub_apex.addWire(last_xform_out, parent_xform_in)
                     self.sub_apex.addWire(last_localxform_out, parent_localxform_in)
 
-                parent_matrix = self.sub_apex.getPortData(transform_xform, False)
-                last_transform = transform
+                parent_matrix = joint_matrix
+                last_transform = out_transform
 
-            shape = self.sub_apex.addNode(control_name, 'rig::ControlShape')
-            self.sub_apex.setNodePosition(shape, hou.Vector3(6 + offset, -4 - offset, 0))
+            transform_xform = self.sub_apex.getPort(out_transform, 'xform[out]')
+            joint_out = self.sub_apex.addGraphOutput(self.sub_output, joint)
+            self.sub_apex.addWire(transform_xform, joint_out)
 
-            shape_name = self.rig.attr.get('shape')
-            shape_name = 'circle_wires'
+            sub_build_controls_in = self.sub_apex.addSubPort(build_controls_in, control_name)
+            self.sub_apex.addWire(transform_xform, sub_build_controls_in)
 
-            control_shape_port = self.sub_apex.getPort(shape, 'control')
-            self.sub_apex.addWire(transform_xform, control_shape_port)
-            self.sub_apex.setNodeParm(shape, 'shapetype', shape_name)
-
-            parms = self.sub_apex.getNodeParms(shape)
-            print('parms', parms)
-
-            shape_offset = hou.hmath.buildTransform({
-                "translate": (0.0, 0.0, 0.0),
-                "rotate": (0.0, 90.0, 0.0),
-                "scale": (200.0, 200.0, 200.0)
-            })
-
-            parms['shapeoffset'] = shape_offset
-            self.sub_apex.setNodeParms(shape, parms)
+            control_tracker.track(control_name, transform, -1, joint_matrix, matrix)
 
             offset += 2
+
+        self.rig.attr.set('controls', controls)
 
 
 class HoudiniWheelRig(HoudiniFkRig):
     pass
+
+
+class HoudiniGetSubControls(HoudiniUtilRig):
+
+    def _build_graph(self):
+
+        controls = self.rig.attr.get('controls')
+
+        control_value = self._attribute_node['controls']
+
+        value_port = self.sub_apex.getPort(control_value, 'value')
+        sub_controls_port = self.sub_apex.addGraphOutput(self.sub_output, 'sub_controls')
+        self.sub_apex.addWire(value_port, sub_controls_port)
+
+        self.rig.attr.set('sub_controls', controls)

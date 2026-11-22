@@ -875,6 +875,7 @@ class CodeManifestTree(qt_ui.FileTreeWidget):
             self.setAlternatingRowColors(False)
 
         self.edit_state = False
+        self.text_edit = False
 
         self.setSelectionMode(qt.QAbstractItemView.ExtendedSelection)
 
@@ -2514,6 +2515,8 @@ class CodeScriptTree(qt_ui.FileTreeWidget):
         self.setHeaderLabels(['Name', 'Type'])
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
+
+        self.text_edit = False
 
         self.header().setDefaultSectionSize(util.scale_dpi(125))
 

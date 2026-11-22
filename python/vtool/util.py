@@ -667,7 +667,6 @@ def scale_dpi(float_value):
 
     if in_houdini:
         scale = hou.ui.globalScaleFactor()
-        scale *= 1.8
     elif in_maya:
         if is_windows() or is_linux():
             scale = cmds.mayaDpiSetting(rsv=True, q=True)

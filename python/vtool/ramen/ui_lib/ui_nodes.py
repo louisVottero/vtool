@@ -220,8 +220,6 @@ class NodeGraphicsView(BasicGraphicsView):
         brush.setColor(qt.QColor(15, 15, 15, 1))
         self.setBackgroundBrush(brush)
 
-        self.setFocusPolicy(qt.QtCore.Qt.ClickFocus)
-
         self.setHorizontalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(qt.QtCore.Qt.ScrollBarAlwaysOff)
 
@@ -494,6 +492,8 @@ class NodeGraphicsView(BasicGraphicsView):
 
     def mousePressEvent(self, event):
 
+        if util.in_houdini:
+            self.setFocus(qt.QtCore.Qt.MouseFocusReason)
         mouse_pos = event.pos()
         item = self.itemAt(mouse_pos)
         self._event_item = item
@@ -1544,7 +1544,6 @@ class GraphicTextItem(GraphicsTextItem):
         return accepted
 
     def event(self, event):
-
         if event.type() == qt.QtCore.QEvent.KeyPress:
             self._cache_value = None
             if event.key() == qt.QtCore.Qt.Key_Tab:
