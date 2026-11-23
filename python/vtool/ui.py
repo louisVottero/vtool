@@ -8,14 +8,14 @@ elif util.in_maya:
     from .maya_lib import ui
 elif util.in_unreal:
     from .unreal_lib import ui
+elif util.in_blender:
+    from .blender_lib import ui
 
 
 def process_manager():
-    if util.in_houdini:
-        ui.process_manager()
-    elif util.in_maya:
+    if util.in_maya:
         ui.tool_manager()
-    elif util.in_unreal:
+    else:
         ui.process_manager()
 
 

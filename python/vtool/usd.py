@@ -10,6 +10,8 @@ if util.in_maya:
     from .maya_lib import usd
 if util.in_unreal:
     from .unreal_lib import usd
+if util.in_blender:
+    from .blender_lib import usd
 
 
 def import_file(filepath):
