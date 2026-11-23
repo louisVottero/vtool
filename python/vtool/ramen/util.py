@@ -9,6 +9,7 @@ from .. import util_file
 in_maya = util.in_maya
 in_unreal = util.in_unreal
 in_houdini = util.in_houdini
+in_blender = util.in_blender
 
 if in_maya:
     import maya.cmds as cmds
@@ -22,6 +23,10 @@ if in_unreal:
 if in_houdini:
     import hou
     from .. import houdini_lib
+
+if in_blender:
+    import bpy
+    from .. import blender_lib
 
 
 def decorator_undo(title=''):
@@ -133,6 +138,17 @@ def get_joints_unreal(filter_list):
 def get_joints_houdini(filter_list):
 
     found = houdini_lib.graph.get_joints(filter_list)
+    return found
+
+
+def get_joints_blender(filter_list):
+    found = [
+    bone.name
+    for obj in bpy.context.scene.objects
+    if obj.type == 'ARMATURE'
+    for bone in obj.data.bones
+    ]
+
     return found
 
 

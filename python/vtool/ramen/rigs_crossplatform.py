@@ -12,6 +12,8 @@ if util.in_houdini:
     from . import rigs_houdini
 if util.in_unreal:
     from . import rigs_unreal
+if util.in_blender:
+    from . import rigs_blender
 
 
 class Fk(rigs.RigJoint):
@@ -33,6 +35,9 @@ class Fk(rigs.RigJoint):
 
     def _houdini_rig(self):
         return rigs_houdini.HoudiniFkRig()
+
+    def _blender_rig(self):
+        return rigs_blender.BlenderFkRig()
 
 
 class Ik(rigs.RigJoint):

@@ -37,6 +37,9 @@ except ImportError: in_houdini = False
 try: import nuke; in_nuke = True
 except ImportError: in_nuke = False
 
+try: import bpy; in_blender = True
+except ImportError: in_blender = False
+
 temp_log = ''
 last_temp_log = ''
 
@@ -768,6 +771,10 @@ def is_in_unreal():
 
 def is_in_houdini():
     return in_houdini
+
+
+def is_in_blender():
+    return in_blender
 
 
 def has_shotgun_api():
