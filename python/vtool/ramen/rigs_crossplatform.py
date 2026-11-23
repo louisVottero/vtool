@@ -12,6 +12,8 @@ if util.in_houdini:
     from . import rigs_houdini
 if util.in_unreal:
     from . import rigs_unreal
+if util.in_blender:
+    from . import rigs_blender
 
 
 class Fk(rigs.RigJoint):
@@ -33,6 +35,9 @@ class Fk(rigs.RigJoint):
 
     def _houdini_rig(self):
         return rigs_houdini.HoudiniFkRig()
+
+    def _blender_rig(self):
+        return rigs_blender.BlenderFkRig()
 
 
 class Ik(rigs.RigJoint):
@@ -107,7 +112,7 @@ class Wheel(rigs.RigJoint):
                          [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
         self.attr.add_in('rotate_axis',
                          [[1.0, 0.0, 0.0]], rigs.AttrType.VECTOR)
-        
+
         self.attr.add_to_node('Steer', '', rigs.AttrType.TITLE)
         self.attr.add_in('steer_control', [], rigs.AttrType.TRANSFORM)
         self.attr.add_in('steer_axis', [[0.0, 0.0, 1.0]], rigs.AttrType.VECTOR)
@@ -116,7 +121,7 @@ class Wheel(rigs.RigJoint):
         self.attr.add_to_node('Tire', '', rigs.AttrType.TITLE)
         self.attr.add_in('tire_joints', [], rigs.AttrType.TRANSFORM)
         self.attr.add_to_node('tire_diameter_offset', [.85], rigs.AttrType.NUMBER)
-        self.attr.add_in('tire_bulge',[[0.2,0.2,0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('tire_bulge', [[0.2, 0.2, 0]], rigs.AttrType.VECTOR)
         self.attr.add_in('brake_joint', [], rigs.AttrType.TRANSFORM)
 
     def _maya_rig(self):
@@ -180,6 +185,7 @@ class IkQuadruped(Ik):
     def _unreal_rig(self):
         return rigs_unreal.UnrealIkQuadrupedRig()
 
+
 class Bendy(rigs.RigJoint):
     rig_type = rigs.RigType.IK
     rig_description = 'bendy'
@@ -191,15 +197,14 @@ class Bendy(rigs.RigJoint):
         self.attr.add_to_node('top_control', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('btm_control', True, rigs.AttrType.BOOL)
         self.attr.add_to_node('control_count', [2], rigs.AttrType.INT)
-        self.attr.add_in('up_axis', [[0.0,1.0,0.0]], rigs.AttrType.VECTOR)
-
-        
+        self.attr.add_in('up_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
 
     def _maya_rig(self):
         return
-    
+
     def _unreal_rig(self):
         return rigs_unreal.UnrealBendyRig()
+
 
 class AimMultiAtCurve(rigs.RigJoint):
     rig_type = rigs.RigType.IK
@@ -209,9 +214,9 @@ class AimMultiAtCurve(rigs.RigJoint):
         super(AimMultiAtCurve, self)._init_variables()
 
         self.attr.add_in('top_parents', [], rigs.AttrType.TRANSFORM)
-        self.attr.add_in('curl_axis', [[0.0,1.0,0.0]], rigs.AttrType.VECTOR)
+        self.attr.add_in('curl_axis', [[0.0, 1.0, 0.0]], rigs.AttrType.VECTOR)
         self.attr.add_to_node('offset', [1.0], rigs.AttrType.NUMBER)
-    
+
     def _maya_rig(self):
         return rigs_maya.MayaAimMultiAtCurveRig()
 
@@ -263,6 +268,7 @@ class GetTransforms(rigs.RigUtil):
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetTransforms()
 
+
 class GetSubControls(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL
     rig_description = 'get sub controls'
@@ -279,6 +285,7 @@ class GetSubControls(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetSubControls()
+
 
 class Parent(rigs.RigUtil):
     rig_type = rigs.RigType.UTIL

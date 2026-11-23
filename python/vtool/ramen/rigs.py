@@ -9,6 +9,7 @@ from vtool import util
 in_maya = util.in_maya
 in_unreal = util.in_unreal
 in_houdini = util.in_houdini
+in_blender = util.in_blender
 
 
 class AttrType(IntEnum):
@@ -355,6 +356,9 @@ class Rig(Base):
         if in_houdini:
             self.rig_util = self._houdini_rig()
 
+        if in_blender:
+            self.rig_util = self._blender_rig()
+
         if self.rig_util:
             self.rig_util.set_rig_class(self)
 
@@ -370,6 +374,10 @@ class Rig(Base):
     def _houdini_rig(self):
         from . import rigs_houdini
         return rigs_houdini.HoudiniUtilRig()
+
+    def _blender_rig(self):
+        from . import rigs_blender
+        return rigs_blender.BlenderUtilRig()
 
     def _setup_variables(self):
         for input_entry in (self.attr.inputs + self.attr.node + self.attr.outputs):
