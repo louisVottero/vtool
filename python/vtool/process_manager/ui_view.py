@@ -357,7 +357,6 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
         self.setTabKeyNavigation(True)
         self.setHeaderHidden(True)
-        self.activation_fix = True
 
         self.setContextMenuPolicy(qt.QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self._item_menu)
@@ -379,6 +378,9 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.itemSelectionChanged.connect(self._selection_changed)
 
         self.disable_right_click = False
+
+        if util.in_houdini:
+            self.setIndentation(util.scale_dpi(15))
 
         if self.checkable:
             if util.is_in_maya():
@@ -569,12 +571,7 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
 
     def mouseMoveEvent(self, event):
         model_index = self.indexAt(event.pos())
-
         item = self.itemAt(event.pos())
-
-        if not item or model_index.column() == 1:
-            self.clearSelection()
-            self.setCurrentItem(self.invisibleRootItem())
 
         if event.button() == qt.QtCore.Qt.RightButton:
             return True
@@ -615,6 +612,21 @@ class ProcessTreeWidget(qt_ui.FileTreeWidget):
         self.dragged_item = item
 
         return super(ProcessTreeWidget, self).mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        model_index = self.indexAt(event.pos())
+        item = self.itemAt(event.pos())
+
+        if not item or model_index.column() == 1:
+            self.clearSelection()
+            self.setCurrentItem(self.invisibleRootItem())
+
+        if hasattr(self, 'dragged_item'):
+            self.dragged_item = None
+        if hasattr(self, 'drag_parent'):
+            self.drag_parent = None
+
+        return super(ProcessTreeWidget, self).mouseReleaseEvent(event)
 
     def _item_expanded(self, item):
 
@@ -1639,8 +1651,8 @@ class ProcessItem(qt.QTreeWidgetItem):
 
         self.detail = False
 
-        height = util.scale_dpi(20)
-        self.setSizeHint(0, qt.QtCore.QSize(40, height))
+        height = util.scale_dpi(18)
+        self.setSizeHint(0, qt.QtCore.QSize(0, height))
 
         self._folder = False
 
@@ -1709,7 +1721,8 @@ class ProcessItem(qt.QTreeWidgetItem):
 
     def setText(self, column, text):
 
-        text = '   ' + text
+        if util.in_maya:
+            text = '  ' + text
         super(ProcessItem, self).setText(column, text)
 
     def text(self, column):

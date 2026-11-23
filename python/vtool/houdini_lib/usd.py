@@ -39,5 +39,7 @@ def import_file(filepath):
         usd.parm('usdsource').set(1)
         usd.parm('usdfile').set(filepath)
 
-    houdini_lib.graph.set_current_character_import(usd)
+    util.show('Importing USD:', usd)
+    houdini_lib.graph.current.reset()
+    houdini_lib.graph.current.character_import = usd
 

@@ -130,6 +130,9 @@ class Wheel(rigs.RigJoint):
     def _unreal_rig(self):
         return rigs_unreal.UnrealWheelRig()
 
+    def _houdini_rig(self):
+        return rigs_houdini.HoudiniWheelRig()
+
 
 class FootRoll(rigs.RigJoint):
     rig_type = rigs.RigType.IK
@@ -285,6 +288,9 @@ class GetSubControls(rigs.RigUtil):
 
     def _unreal_rig(self):
         return rigs_unreal.UnrealGetSubControls()
+
+    def _houdini_rig(self):
+        return rigs_houdini.HoudiniGetSubControls()
 
 
 class Parent(rigs.RigUtil):

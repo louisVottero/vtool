@@ -160,25 +160,25 @@ def get_sub_controls(control):
 
 def get_control_name(description1=None, description2=None, side=None, sub=False, numbering=True):
 
-    if not sub:
-        control_name_inst = util_file.ControlNameFromSettingsFile()
-        control_name_inst.set_use_side_alias(False)
+    control_name_inst = util_file.ControlNameFromSettingsFile()
+    control_name_inst.set_use_side_alias(False)
 
-        control_name_inst.set_number_in_control_name(numbering)
+    control_name_inst.set_number_in_control_name(numbering)
 
-        if side:
-            side = side[0]
+    if side:
+        side = side[0]
 
-        description = None
+    description = None
 
-        if description2:
-            description = description1 + '_' + description2
-        else:
-            description = description1
-
-        control_name = control_name_inst.get_name(description, side)
+    if description2:
+        description = description1 + '_' + description2
     else:
-        control_name = description.replace('CNT_', 'CNT_SUB_1_')
+        description = description1
+
+    control_name = control_name_inst.get_name(description, side)
+
+    if sub:
+        control_name = control_name.replace('CNT_', 'CNT_SUB_1_')
 
     return control_name
 

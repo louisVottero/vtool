@@ -206,15 +206,15 @@ QListView, QTreeView {
 }
 
 QTreeView {
-    show-decoration-selected: 1;
+    show-decoration-selected: 0;
     itemsExpandable: true;
-    indentation: 0.3em;
-    uniformRowHeights: true;    
+    indentation: 0.03em;
+    uniformRowHeights: true;        
 }
 
 QTreeView::item {
-    padding: 0.02em 0.05em;
-    height: 1.0em; 
+    padding: 0.02em 0.05em;     
+    height: 1em; 
     margin: 0px;
 }
 
@@ -237,13 +237,12 @@ QTreeView::item:selected:!active {
     color: black;
 }
 
+
+
 QTreeView::branch:selected:active {
     background-color: --highlight;
 }
 
-QTreeView::branch:selected:!active {
-    background-color: --highlight;
-}
 
 QTreeWidget::indicator:unchecked {
     image: url(--icon_path/box_off.png);
@@ -260,6 +259,8 @@ ProcessTreeWidget::indicator:unchecked {
 ProcessTreeWidget::indicator:checked {
     image: url(--icon_path/plus.png);
 }
+
+
 
 QTabWidget::pane {
     border-top: 1px solid #3A3A3A;

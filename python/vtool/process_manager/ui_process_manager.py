@@ -667,7 +667,6 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
         return base_indentation
 
     def _auto_size_splitter(self):
-
         tree = self.view_widget.tree_widget
         sizes = self.process_splitter.sizes()
 
@@ -688,11 +687,8 @@ class ProcessManagerWindow(qt_ui.BasicWindow):
 
             total_item_width = text_width + indentation + util.scale_dpi(60)
 
-            if total_item_width > sizes[0]:
+            if total_item_width > width:
                 width = total_item_width
-
-        if width > util.scale_dpi(400):
-            return
 
         sizes[0] = width
         self.process_splitter.setSizes(sizes)
@@ -2039,7 +2035,7 @@ class NoteText(qt.QTextEdit):
                     return True
 
             except Exception as e:
-                print("Error processing mime data:", e)
+                util.show("Error processing mime data:", e)
 
         return super(NoteText, self).canInsertFromMimeData(source)
 

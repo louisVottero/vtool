@@ -2624,7 +2624,7 @@ def set_color(nodes, color):
             try:
                 cmds.setAttr(override_color, color)
             except:
-                print('Color did not set properly:', override_color, color)
+                util.show('Color did not set properly:', override_color, color)
 
 
 def set_color_rgb(nodes, r=0, g=0, b=0):
