@@ -147,7 +147,7 @@ def get_joints_houdini(filter_list):
 
 def get_joints_blender(filter_list):
 
-    found = blender_lib.util.get_joints(filter_list)
+    found = blender_lib.util.get_bones(filter_list)
     return found
 
 
