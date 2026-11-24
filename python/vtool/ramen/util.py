@@ -87,6 +87,10 @@ def get_joints(filter_text, exclude_text=''):
         found = get_joints_houdini(split_filter)
         exclude_found = get_joints_houdini(split_exclude)
 
+    if util.in_blender:
+        found = get_joints_blender(split_filter)
+        exclude_found = get_joints_blender(split_exclude)
+
     if not found:
         return []
 
@@ -142,13 +146,8 @@ def get_joints_houdini(filter_list):
 
 
 def get_joints_blender(filter_list):
-    found = [
-    bone.name
-    for obj in bpy.context.scene.objects
-    if obj.type == 'ARMATURE'
-    for bone in obj.data.bones
-    ]
 
+    found = blender_lib.util.get_bones(filter_list)
     return found
 
 

@@ -5,6 +5,7 @@ from .. import util, util_file, qt
 from .ui_lib import ui_nodes
 from . import rigs
 from .. import unreal_lib
+from .. import blender_lib
 
 
 def run_json(json_file):
@@ -45,7 +46,11 @@ def run_ui(node_view):
     items = node_view.items
     nodes = ui_nodes.get_node_eval_order(items)
 
-    run(nodes)
+    if util.in_blender:
+        with blender_lib.util.view_3d_context():
+            run(nodes)
+    else:
+        run(nodes)
 
 
 def step_ui(node_view):
