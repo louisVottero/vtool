@@ -10,13 +10,12 @@ if in_blender:
     import bpy
 
 
-def get_or_create_circle_widget(name="WGT_fk_circle", radius=0.5, segments=24):
+def get_or_create_circle_widget(name="WGT_fk_circle", radius=5, segments=24):
     """Creates (or reuses) a clean edge-only circle mesh object for bone custom shapes."""
     obj = bpy.data.objects.get(name)
     if obj is not None:
         return obj
 
-    # Build circle vertices in the XZ plane (wraps around the bone's Y-axis)
     verts = []
     edges = []
     for i in range(segments):
@@ -30,7 +29,6 @@ def get_or_create_circle_widget(name="WGT_fk_circle", radius=0.5, segments=24):
 
     obj = bpy.data.objects.new(name, mesh)
 
-    # Put widget in a dedicated hidden collection so it doesn't clutter the scene
     wgt_col = bpy.data.collections.get("Widgets")
     if wgt_col is None:
         wgt_col = bpy.data.collections.new("Widgets")
@@ -61,6 +59,14 @@ class BlenderFkRig(BlenderUtilRig):
     def _build_rig(self):
         print('blender fk rig')
         joints = self.rig.attr.get('joints')
+        description = self.rig.attr.get('description')
+        side = self.rig.attr.get('side')
+
+        shape_translate = self.rig.attr.get('shape_transform')
+        shape_rotate = self.rig.attr.get('shape_rotate')
+        shape_scale = self.rig.attr.get('shape_scale')
+
+        color = self.rig.attr.get('color')
 
         if not joints:
             return
@@ -87,8 +93,34 @@ class BlenderFkRig(BlenderUtilRig):
 
         prefix = 'fk'
         collection_name = 'Fk Controls'
-        shape_obj = get_or_create_circle_widget()
+        wgt_name = 'WGT_FK'
+        if description:
+            description = description[0]
+            wgt_name += f'_{description}'
+        if side:
+            side = side[0]
+            if side:
+                wgt_name += f'_{side}'
+
+        shape_obj = get_or_create_circle_widget(wgt_name)
+
+        if shape_translate:
+            shape_translate = shape_translate[0]
+            shape_obj.location = (shape_translate[0], shape_translate[1], shape_translate[2])
+        if shape_rotate:
+            shape_rotate = shape_rotate[0]
+            shape_obj.rotation_euler = tuple(math.radians(angle) for angle in shape_rotate)
+        if shape_scale:
+            shape_scale = shape_scale[0]
+            shape_obj.scale = (shape_scale[0], shape_scale[1], shape_scale[2])
+
+        shape_obj.data.transform(shape_obj.matrix_basis)
+        shape_obj.data.update()
+
         use_copy_transforms = True
+
+        if color:
+            color = color[0]
 
         for src_name in joints:
             src_eb = edit_bones.get(src_name)
@@ -98,7 +130,6 @@ class BlenderFkRig(BlenderUtilRig):
             base_name = src_name
             fk_name = f"{prefix}{base_name}"
 
-            # Remove existing bone if regenerating
             if fk_name in edit_bones:
                 edit_bones.remove(edit_bones[fk_name])
 
@@ -109,7 +140,6 @@ class BlenderFkRig(BlenderUtilRig):
             fk_eb.use_deform = False
             fk_eb.use_connect = False
 
-            # Parent to previous FK bone in chain, or mirror source bone's parent
             if prev_fk_edit_bone is not None:
                 fk_eb.parent = prev_fk_edit_bone
             elif src_eb.parent is not None:
@@ -118,11 +148,9 @@ class BlenderFkRig(BlenderUtilRig):
             fk_pairs.append((src_name, fk_eb.name))
             prev_fk_edit_bone = fk_eb
 
-        # Switch to POSE mode to assign constraints, custom shapes, and collections
         bpy.ops.object.mode_set(mode='POSE')
         pose_bones = armature_obj.pose.bones
 
-        # Get or create Bone Collection (Blender 4.0+)
         fk_collection = None
         if hasattr(arm_data, "collections"):
             fk_collection = arm_data.collections.get(collection_name) or arm_data.collections.new(collection_name)
@@ -135,32 +163,26 @@ class BlenderFkRig(BlenderUtilRig):
             fk_pb = pose_bones[fk_name]
             created_fk_names.append(fk_name)
 
-            # Assign custom shape if provided
             if shape_obj is not None:
+                fk_pb.use_custom_shape_bone_size = False
                 fk_pb.custom_shape = shape_obj
+                if color:
+                    fk_pb.color.palette = 'CUSTOM'
+                    r = color[0]
+                    g = color[1]
+                    b = color[2]
 
-            # Assign to Bone Collection
+                    fk_pb.color.custom.normal = (r, g, b)
+                    fk_pb.color.custom.select = (min(r + 0.25, 1.0), min(g + 0.25, 1.0), min(b + 0.25, 1.0))
+                    fk_pb.color.custom.active = (min(r + 0.50, 1.0), min(g + 0.50, 1.0), min(b + 0.50, 1.0))
+
             if fk_collection is not None:
                 fk_collection.assign(fk_pb.bone)
 
-            # Constrain deform bone to follow FK control bone
             con_type = 'COPY_TRANSFORMS' if use_copy_transforms else 'COPY_ROTATION'
             con = src_pb.constraints.new(type=con_type)
             con.name = f"FK_{con_type}"
             con.target = armature_obj
             con.subtarget = fk_name
-
-        # Restore original mode
-        bpy.ops.object.mode_set(mode=prev_mode)
-
-        for obj in bpy.data.objects:
-            if obj.name.startswith("WGT-"):  # Adjust prefix to match your widget naming
-                obj.hide_select = False
-                obj.hide_viewport = False
-
-        # Also ensure every collection in the scene allows selection
-        for col in bpy.data.collections:
-            col.hide_select = False
-            col.hide_viewport = False
 
         return created_fk_names

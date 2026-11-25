@@ -417,7 +417,7 @@ def undo_chunk(function):
         global current_progress_bar
 
         if not in_maya:
-            return
+            return function(*args, **kwargs)
 
         undo_state = cmds.undoInfo(state=True, q=True)
 

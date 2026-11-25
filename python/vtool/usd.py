@@ -15,6 +15,7 @@ if util.in_blender:
 
 
 def import_file(filepath):
+    print('import usd')
     if not usd:
         return
     result = usd.import_file(filepath)
